@@ -18,20 +18,44 @@ const map = new mapboxgl.Map({
   transformRequest: transformRequest,
 });
 
+map.addControl(new mapboxgl.NavigationControl());
+
+
+// Add geolocate control to the map.
+map.addControl(
+  new mapboxgl.GeolocateControl({
+  positionOptions: {
+  enableHighAccuracy: true
+  },
+  // When active the map will receive updates to the device's location as it changes.
+  trackUserLocation: true,
+  // Draw an arrow next to the location dot to indicate which direction the device is heading.
+  showUserHeading: true
+  })
+  );
+
 function flyToLocation(currentFeature) {
   map.flyTo({
     center: currentFeature,
-    zoom: 11,
+    zoom: 15,
   });
 }
 
 function createPopup(currentFeature) {
   const popups = document.getElementsByClassName('mapboxgl-popup');
   /** Check if there is already a popup on the map and if so, remove it */
+  var cta = currentFeature.properties.URL ? '<div class="sfgov-url-button__container"><div class="field field--type-link __link field__item"><a class="URL-link" href="' + currentFeature.properties.URL + '">' + 'Website' + '</a></div></div>' : '<div><strong>' + '</strong></div>'
   if (popups[0]) popups[0].remove();
   new mapboxgl.Popup({ closeOnClick: true })
     .setLngLat(currentFeature.geometry.coordinates)
-    .setHTML('<h3>' + currentFeature.properties[config.popupInfo] + '</h3>')
+    .setHTML('<h3 font-weight: bold;>' + currentFeature.properties.Location_Name + '</h3>' +
+    '<p><strong>Adresse:</strong> ' + currentFeature.properties.Address + ',' + ' ' + currentFeature.properties.Zip + ' ' + currentFeature.properties.City + '</p>' +
+    '<p><strong>Beschreibung:</strong> ' + currentFeature.properties.Description + '</p>' +
+    '<p><strong>Typ:</strong> ' + currentFeature.properties.Type + '</p>' +
+    '<p><strong>Service:</strong> ' + currentFeature.properties.Service + '</p>' + 
+
+    cta
+    )
     .addTo(map);
 }
 
@@ -54,10 +78,27 @@ function buildLocationList(locationData) {
     link.className = 'title';
     link.id = 'link-' + prop.id;
     link.innerHTML =
-      '<p style="line-height: 1.25">' + prop[columnHeaders[0]] + '</p>';
+      '<p style="line-height: 1.5">' + prop[columnHeaders[0]] + '</p>';
 
     /* Add details to the individual listing. */
     const details = listing.appendChild(document.createElement('div'));
+    // Add the Address, Zip and City to the individual listing
+    details.innerHTML = prop.Address + ',' + ' ' + prop.Zip + ' ' + prop.City + '</p>';
+    // Add Zielgruppe
+    if (prop.Category) {
+      details.innerHTML += '</br><p><strong>Kategorie:</strong> ' + prop.Category + '</p>';
+    }
+    // Add Zielgruppe
+    if (prop.Target_Group) {
+      details.innerHTML += '</br><p><strong>Ziel Gruppe:</strong> ' + prop.Target_Group + '</p>';
+    }
+
+    // Add Website address
+    if (prop.URL) {
+      details.innerHTML += '<br/><a href="' + prop.URL + '\">' + '<strong>Website:</strong>' + ' ' + prop.URL + '</a>';
+    }
+
+
     details.className = 'content';
 
     for (let i = 1; i < columnHeaders.length; i++) {
@@ -360,6 +401,7 @@ function removeFiltersButton() {
   });
 }
 
+
 createFilterObject(config.filters);
 applyFilters();
 filters(config.filters);
@@ -371,7 +413,16 @@ const geocoder = new MapboxGeocoder({
   marker: true, // Use the geocoder's default marker style
   zoom: 11,
 });
+map.addControl(geocoder, 'top-left');
 
+function sortAlpha(locations) {
+  locations.features.sort(function (a, b) {
+    if (a.properties.name < b.properties.name) { return -1; }
+    if (a.properties.name > b.properties.name) { return 1; }
+    return 0;
+  });
+  buildLocationList(locations);
+};
 function sortByDistance(selectedPoint) {
   const options = { units: 'miles' };
   let data;
@@ -406,12 +457,13 @@ function sortByDistance(selectedPoint) {
 }
 
 geocoder.on('result', (ev) => {
-  const searchResult = ev.result.geometry;
+  const searchResult = ev.result;
   sortByDistance(searchResult);
 });
 
+
+
 map.on('load', () => {
-  map.addControl(geocoder, 'top-right');
 
   // csv2geojson - following the Sheet Mapper tutorial https://www.mapbox.com/impact-tools/sheet-mapper
   console.log('loaded');
@@ -446,21 +498,46 @@ map.on('load', () => {
         });
 
         geojsonData = data;
-        // Add the the layer to the map
+        // Add point layer to the map
+
         map.addLayer({
           id: 'locationData',
+          source: 'Category',
           type: 'circle',
           source: {
             type: 'geojson',
             data: geojsonData,
           },
           paint: {
-            'circle-radius': 5, // size of circles
-            'circle-color': '#3D2E5D', // color of circles
+            'circle-radius': {
+              'base': 2,
+              'stops': [
+              [12, 7],
+              [22, 180]
+              ]
+              }, // size of circles
+              'circle-color': [
+                'match',
+                ['get', 'Category'],
+            
+                'Universitäre und außeruniversitäre Forschung', '#1f83b9',
+                'Gründerzentrum', '#61aad6',
+                'Accelerator', '#61d2ca',
+                'Technologietransferzentrum', '#61aad6',
+                'Innovationslabor', '#9dcae5',
+                'Cluster & Innovationsagentur', '#9dcae5',
+
+                'Coworking Space', '#ff8e52',
+                'Fablab', '#ff6b6b',
+                'HackerSpace', '#ff9797',
+                'MakerSpace', '#ff7b5e',
+                '#000044'
+                ], // color of circles
             'circle-stroke-color': 'white',
-            'circle-stroke-width': 1,
-            'circle-opacity': 0.7,
+            'circle-stroke-width': 1
           },
+
+
         });
       },
     );
@@ -485,6 +562,202 @@ map.on('load', () => {
     buildLocationList(geojsonData);
   }
 });
+/*
+map.on('load', () => {
+  
+  // csv2geojson - following the Sheet Mapper tutorial https://www.mapbox.com/impact-tools/sheet-mapper
+  console.log('loaded');
+  $(document).ready(() => {
+    console.log('ready');
+    $.ajax({
+      type: 'GET',
+      url: config.CSV,
+      dataType: 'text',
+      success: function (csvData) {
+        makeGeoJSON(csvData);
+      },
+      error: function (request, status, error) {
+        console.log(request);
+        console.log(status);
+        console.log(error);
+      },
+    });
+  });
+
+  function makeGeoJSON(csvData) {
+    csv2geojson.csv2geojson(
+      csvData,
+      {
+        latfield: 'Latitude',
+        lonfield: 'Longitude',
+        delimiter: ',',
+      },
+      (err, data) => {
+        data.features.forEach((data, i) => {
+          data.properties.id = i;
+        });
+
+        geojsonData = data;
+        // Add point layer to the map
+       
+        map.addSource('locations', {
+          'type': 'geojson',
+          'data': geojsonData,
+          'cluster': true,
+          'clusterRadius': 80,
+          // Define cluster properties if needed for custom visualization like donut charts
+          'clusterProperties': {
+              // Example: Count the number of points in each cluster
+              
+              'Accelerator': ['+', ['case', 'Accelerator', 1, 0]],
+              'Cluster & Innovationsagentur': ['+', ['case', 'Cluster & Innovationsagentur', 1, 0]],
+              'Coworking Space':['+', ['case', 'Coworking Space', 1, 0]],
+              'Fablab':['+', ['case', 'Fablab', 1, 0]],
+              'Gründerzentrum':['+', ['case', 'Gründerzentrum', 1, 0]],
+              'HackerSpace':  ['+', ['case','HackerSpace', 1, 0]],
+              'Innovationslabor':['+', ['case', 'Innovationszentrum', 1, 0]],
+              'MakerSpace':['+', ['case', 'MakerSpace', 1, 0]],
+              'Technologietransferzentrum':['+', ['case','Technologietransferzentrum', 1, 0]],
+              'Universitäre und außeruniversitäre Forschung': ['+', ['case', 'Universitäre und außeruniversitäre Forschung', 1, 0]]
+            
+          }
+      });
+        map.addLayer({
+          id: 'locationData',
+          type: 'Symbol',
+          source: {
+            type: 'geojson',
+            data: geojsonData,
+          },
+          'filter': ['!=', 'cluster', true],
+          'layout': {
+            'text-field': [
+              'number-format',
+              ['get', 'Category'],
+              { 'min-fraction-digits': 1, 'max-fraction-digits': 1 }
+            ],
+            'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+            'text-size': 10
+          },
+          'paint': {
+          ' text-color': [
+              'case',
+              ['<', ['get', 'Category'], 3],
+              'black',
+              'white'
+            ]
+          }
+        });
+        // objects for caching and keeping track of HTML marker objects (for performance)
+        const markers = {};
+        let markersOnScreen = {};
+        
+        function updateMarkers() {
+        const newMarkers = {};
+        const features = map.querySourceFeatures('geojsonData');
+        
+        // for every cluster on the screen, create an HTML marker for it (if we didn't yet),
+        // and add it to the map if it's not there already
+        for (const feature of features) {
+        const coords = feature.geometry.coordinates;
+        const props = feature.properties;
+        if (!props.cluster) continue;
+        const id = props.cluster_id;
+        
+        let marker = markers[id];
+        if (!marker) {
+        const el = createDonutChart(props);
+        marker = markers[id] = new mapboxgl.Marker({
+        element: el
+        }).setLngLat(coords);
+        }
+        newMarkers[id] = marker;
+        
+        if (!markersOnScreen[id]) marker.addTo(map);
+        }
+        // for every marker we've added previously, remove those that are no longer visible
+        for (const id in markersOnScreen) {
+        if (!newMarkers[id]) markersOnScreen[id].remove();
+        }
+        markersOnScreen = newMarkers;
+        }
+        
+        // after the GeoJSON data is loaded, update markers on the screen on every frame
+        map.on('render', () => {
+        if (!map.isSourceLoaded('geojsonData')) return;
+        updateMarkers();
+        });
+      },
+    );
+  }
+});
+// code for creating an SVG donut chart from feature properties
+function createDonutChart(props) {
+  const offsets = [];
+  const counts = [
+  props.Category.Accelerator,
+  props.Category.Fablab,
+  props.Category.Gründerzentrum,
+  props.Category.MakerSpace
+  ];
+  let total = 0;
+  for (const count of counts) {
+  offsets.push(total);
+  total += count;
+  }
+  const fontSize =
+  total >= 1000 ? 22 : total >= 100 ? 20 : total >= 10 ? 18 : 16;
+  const r =
+  total >= 1000 ? 50 : total >= 100 ? 32 : total >= 10 ? 24 : 18;
+  const r0 = Math.round(r * 0.6);
+  const w = r * 2;
+   
+  let html = `<div>
+  <svg width="${w}" height="${w}" viewbox="0 0 ${w} ${w}" text-anchor="middle" style="font: ${fontSize}px sans-serif; display: block">`;
+   
+  for (let i = 0; i < counts.length; i++) {
+  html += donutSegment(
+  offsets[i] / total,
+  (offsets[i] + counts[i]) / total,
+  r,
+  r0,
+  colors[i]
+  );
+  }
+  html += `<circle cx="${r}" cy="${r}" r="${r0}" fill="white" />
+  <text dominant-baseline="central" transform="translate(${r}, ${r})">
+  ${total.toLocaleString()}
+  </text>
+  </svg>
+  </div>`;
+   
+  const el = document.createElement('div');
+  el.innerHTML = html;
+  return el.firstChild;
+  }
+   
+  function donutSegment(start, end, r, r0, color) {
+  if (end - start === 1) end -= 0.00001;
+  const a0 = 2 * Math.PI * (start - 0.25);
+  const a1 = 2 * Math.PI * (end - 0.25);
+  const x0 = Math.cos(a0),
+  y0 = Math.sin(a0);
+  const x1 = Math.cos(a1),
+  y1 = Math.sin(a1);
+  const largeArc = end - start > 0.5 ? 1 : 0;
+   
+  // draw an SVG path
+  return `<path d="M ${r + r0 * x0} ${r + r0 * y0} L ${r + r * x0} ${
+  r + r * y0
+  } A ${r} ${r} 0 ${largeArc} 1 ${r + r * x1} ${r + r * y1} L ${
+  r + r0 * x1
+  } ${r + r0 * y1} A ${r0} ${r0} 0 ${largeArc} 0 ${r + r0 * x0} ${
+  r + r0 * y0
+  }" fill="${color}" />`;
+  }
+
+*/
+
 
 // Modal - popup for filtering results
 const filterResults = document.getElementById('filterResults');
@@ -513,3 +786,5 @@ function transformRequest(url) {
     url: isMapboxRequest ? url.replace('?', '?pluginName=finder&') : url,
   };
 }
+
+  
