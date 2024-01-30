@@ -464,300 +464,174 @@ geocoder.on('result', (ev) => {
 
 
 map.on('load', () => {
-
-  // csv2geojson - following the Sheet Mapper tutorial https://www.mapbox.com/impact-tools/sheet-mapper
-  console.log('loaded');
-  $(document).ready(() => {
-    console.log('ready');
-    $.ajax({
-      type: 'GET',
-      url: config.CSV,
-      dataType: 'text',
-      success: function (csvData) {
-        makeGeoJSON(csvData);
-      },
-      error: function (request, status, error) {
-        console.log(request);
-        console.log(status);
-        console.log(error);
-      },
+    // csv2geojson - following the Sheet Mapper tutorial https://www.mapbox.com/impact-tools/sheet-mapper
+    console.log('loaded');
+    $(document).ready(() => {
+        console.log('ready');
+        $.ajax({
+            type: 'GET',
+            url: config.CSV,
+            dataType: 'text',
+            success: function(csvData) {
+                makeGeoJSON(csvData);
+            },
+            error: function(request, status, error) {
+                console.log(request);
+                console.log(status);
+                console.log(error);
+            },
+        });
     });
-  });
 
-  function makeGeoJSON(csvData) {
-    csv2geojson.csv2geojson(
-      csvData,
-      {
-        latfield: 'Latitude',
-        lonfield: 'Longitude',
-        delimiter: ',',
-      },
-      (err, data) => {
-        data.features.forEach((data, i) => {
-          data.properties.id = i;
+    function makeGeoJSON(csvData) {
+        csv2geojson.csv2geojson(
+            csvData, {
+                latfield: 'Latitude',
+                lonfield: 'Longitude',
+                delimiter: ',',
+            },
+            (err, data) => {
+                data.features.forEach((data, i) => {
+                    data.properties.id = i;
+                });
+
+                geojsonData = data;
+                // console.log(geojsonData)
+                // Add point layer to the map
+                map.addSource('locationData', {
+                    type: 'geojson',
+                    // Point to GeoJSON data. This example visualizes all M1.0+ locationData
+                    // from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
+                    data: geojsonData,
+                    cluster: true,
+                    clusterMaxZoom: 14, // Max zoom to cluster points on
+                    clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
+                })
+                map.addLayer({
+                    id: 'clusters',
+                    source: 'Category',
+                    type: 'circle',
+                    source: 'locationData',
+                    filter: ['has', 'point_count'],
+                    paint: {
+                        // Use step expressions (https://docs.mapbox.com/style-spec/reference/expressions/#step)
+                        // with three steps to implement three types of circles:
+                        //   * Blue, 20px circles when point count is less than 100
+                        //   * Yellow, 30px circles when point count is between 100 and 750
+                        //   * Pink, 40px circles when point count is greater than or equal to 750
+                        'circle-color': [
+                            'step', ['get', 'point_count'],
+                            '#51bbd6',
+                            10,
+                            '#f1f075',
+                            75,
+                            '#f28cb1'
+                        ],
+                        'circle-radius': [
+                            'step', ['get', 'point_count'],
+                            20,
+                            100,
+                            30,
+                            750,
+                            40
+                        ]
+                    },
+
+
+                });
+                map.addLayer({
+                    id: 'cluster-count',
+                    type: 'symbol',
+                    source: 'locationData',
+                    filter: ['has', 'point_count'],
+                    layout: {
+                        'text-field': ['get', 'point_count_abbreviated'],
+                        'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                        'text-size': 16
+                    }
+                });
+                map.addLayer({
+                    id: 'unclustered-point',
+                    type: 'circle',
+                    source: 'locationData',
+                    filter: ['!', ['has', 'point_count']],
+                    paint: {
+                      'circle-radius': {
+                        'base': 2,
+                        'stops': [
+                            [12, 7],
+                            [22, 180]
+                        ]
+                    }, // size of circles
+                    'circle-color': [
+                        'match', ['get', 'Category'],
+                        'Universitäre und außeruniversitäre Forschung', '#1f83b9',
+                        'Gründerzentrum', '#61aad6',
+                        'Accelerator', '#61d2ca',
+                        'Technologietransferzentrum', '#61aad6',
+                        'Innovationslabor', '#9dcae5',
+                        'Cluster & Innovationsagentur', '#9dcae5',
+                        'Coworking Space', '#ff8e52',
+                        'Fablab', '#ff6b6b',
+                        'HackerSpace', '#ff9797',
+                        'MakerSpace', '#ff7b5e',
+                        '#000044'
+                    ], // color of circles
+                    'circle-stroke-color': 'white',
+                    'circle-stroke-width': 1,
+                    }
+                });
+
+
+            },
+        );
+
+        map.on('click', 'unclustered-point', (e) => {
+            const features = map.queryRenderedFeatures(e.point, {
+                layers: ['unclustered-point'],
+            });
+            console.log(features)
+            const clickedPoint = features[0].geometry.coordinates;
+            flyToLocation(clickedPoint);
+            sortByDistance(clickedPoint);
+            createPopup(features[0]);
         });
 
-        geojsonData = data;
-        // Add point layer to the map
-
-        map.addLayer({
-          id: 'locationData',
-          source: 'Category',
-          type: 'circle',
-          source: {
-            type: 'geojson',
-            data: geojsonData,
-          },
-          paint: {
-            'circle-radius': {
-              'base': 2,
-              'stops': [
-              [12, 7],
-              [22, 180]
-              ]
-              }, // size of circles
-              'circle-color': [
-                'match',
-                ['get', 'Category'],
-            
-                'Universitäre und außeruniversitäre Forschung', '#1f83b9',
-                'Gründerzentrum', '#61aad6',
-                'Accelerator', '#61d2ca',
-                'Technologietransferzentrum', '#61aad6',
-                'Innovationslabor', '#9dcae5',
-                'Cluster & Innovationsagentur', '#9dcae5',
-
-                'Coworking Space', '#ff8e52',
-                'Fablab', '#ff6b6b',
-                'HackerSpace', '#ff9797',
-                'MakerSpace', '#ff7b5e',
-                '#000044'
-                ], // color of circles
-            'circle-stroke-color': 'white',
-            'circle-stroke-width': 1
-          },
-
-
+        map.on('mouseenter', 'unclustered-point', () => {
+            map.getCanvas().style.cursor = 'pointer';
         });
-      },
-    );
 
-    map.on('click', 'locationData', (e) => {
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ['locationData'],
-      });
-      const clickedPoint = features[0].geometry.coordinates;
-      flyToLocation(clickedPoint);
-      sortByDistance(clickedPoint);
-      createPopup(features[0]);
-    });
+        map.on('mouseleave', 'unclustered-point', () => {
+            map.getCanvas().style.cursor = '';
+        });
+        // inspect a cluster on click
+        map.on('click', 'clusters', (e) => {
+          const features = map.queryRenderedFeatures(e.point, {
+              layers: ['clusters']
+          });
+          const clusterId = features[0].properties.cluster_id;
+          map.getSource('locationData').getClusterExpansionZoom(
+              clusterId,
+              (err, zoom) => {
+                  if (err) return;
 
-    map.on('mouseenter', 'locationData', () => {
-      map.getCanvas().style.cursor = 'pointer';
-    });
+                  map.easeTo({
+                      center: features[0].geometry.coordinates,
+                      zoom: zoom
+                  });
+              }
+          );
+        });
+        map.on('mouseenter', 'clusters', () => {
+          map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', 'clusters', () => {
+          map.getCanvas().style.cursor = '';
+        });
 
-    map.on('mouseleave', 'locationData', () => {
-      map.getCanvas().style.cursor = '';
-    });
-    buildLocationList(geojsonData);
-  }
+        buildLocationList(geojsonData);        
+      }
 });
-/*
-map.on('load', () => {
-  
-  // csv2geojson - following the Sheet Mapper tutorial https://www.mapbox.com/impact-tools/sheet-mapper
-  console.log('loaded');
-  $(document).ready(() => {
-    console.log('ready');
-    $.ajax({
-      type: 'GET',
-      url: config.CSV,
-      dataType: 'text',
-      success: function (csvData) {
-        makeGeoJSON(csvData);
-      },
-      error: function (request, status, error) {
-        console.log(request);
-        console.log(status);
-        console.log(error);
-      },
-    });
-  });
-
-  function makeGeoJSON(csvData) {
-    csv2geojson.csv2geojson(
-      csvData,
-      {
-        latfield: 'Latitude',
-        lonfield: 'Longitude',
-        delimiter: ',',
-      },
-      (err, data) => {
-        data.features.forEach((data, i) => {
-          data.properties.id = i;
-        });
-
-        geojsonData = data;
-        // Add point layer to the map
-       
-        map.addSource('locations', {
-          'type': 'geojson',
-          'data': geojsonData,
-          'cluster': true,
-          'clusterRadius': 80,
-          // Define cluster properties if needed for custom visualization like donut charts
-          'clusterProperties': {
-              // Example: Count the number of points in each cluster
-              
-              'Accelerator': ['+', ['case', 'Accelerator', 1, 0]],
-              'Cluster & Innovationsagentur': ['+', ['case', 'Cluster & Innovationsagentur', 1, 0]],
-              'Coworking Space':['+', ['case', 'Coworking Space', 1, 0]],
-              'Fablab':['+', ['case', 'Fablab', 1, 0]],
-              'Gründerzentrum':['+', ['case', 'Gründerzentrum', 1, 0]],
-              'HackerSpace':  ['+', ['case','HackerSpace', 1, 0]],
-              'Innovationslabor':['+', ['case', 'Innovationszentrum', 1, 0]],
-              'MakerSpace':['+', ['case', 'MakerSpace', 1, 0]],
-              'Technologietransferzentrum':['+', ['case','Technologietransferzentrum', 1, 0]],
-              'Universitäre und außeruniversitäre Forschung': ['+', ['case', 'Universitäre und außeruniversitäre Forschung', 1, 0]]
-            
-          }
-      });
-        map.addLayer({
-          id: 'locationData',
-          type: 'Symbol',
-          source: {
-            type: 'geojson',
-            data: geojsonData,
-          },
-          'filter': ['!=', 'cluster', true],
-          'layout': {
-            'text-field': [
-              'number-format',
-              ['get', 'Category'],
-              { 'min-fraction-digits': 1, 'max-fraction-digits': 1 }
-            ],
-            'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-            'text-size': 10
-          },
-          'paint': {
-          ' text-color': [
-              'case',
-              ['<', ['get', 'Category'], 3],
-              'black',
-              'white'
-            ]
-          }
-        });
-        // objects for caching and keeping track of HTML marker objects (for performance)
-        const markers = {};
-        let markersOnScreen = {};
-        
-        function updateMarkers() {
-        const newMarkers = {};
-        const features = map.querySourceFeatures('geojsonData');
-        
-        // for every cluster on the screen, create an HTML marker for it (if we didn't yet),
-        // and add it to the map if it's not there already
-        for (const feature of features) {
-        const coords = feature.geometry.coordinates;
-        const props = feature.properties;
-        if (!props.cluster) continue;
-        const id = props.cluster_id;
-        
-        let marker = markers[id];
-        if (!marker) {
-        const el = createDonutChart(props);
-        marker = markers[id] = new mapboxgl.Marker({
-        element: el
-        }).setLngLat(coords);
-        }
-        newMarkers[id] = marker;
-        
-        if (!markersOnScreen[id]) marker.addTo(map);
-        }
-        // for every marker we've added previously, remove those that are no longer visible
-        for (const id in markersOnScreen) {
-        if (!newMarkers[id]) markersOnScreen[id].remove();
-        }
-        markersOnScreen = newMarkers;
-        }
-        
-        // after the GeoJSON data is loaded, update markers on the screen on every frame
-        map.on('render', () => {
-        if (!map.isSourceLoaded('geojsonData')) return;
-        updateMarkers();
-        });
-      },
-    );
-  }
-});
-// code for creating an SVG donut chart from feature properties
-function createDonutChart(props) {
-  const offsets = [];
-  const counts = [
-  props.Category.Accelerator,
-  props.Category.Fablab,
-  props.Category.Gründerzentrum,
-  props.Category.MakerSpace
-  ];
-  let total = 0;
-  for (const count of counts) {
-  offsets.push(total);
-  total += count;
-  }
-  const fontSize =
-  total >= 1000 ? 22 : total >= 100 ? 20 : total >= 10 ? 18 : 16;
-  const r =
-  total >= 1000 ? 50 : total >= 100 ? 32 : total >= 10 ? 24 : 18;
-  const r0 = Math.round(r * 0.6);
-  const w = r * 2;
-   
-  let html = `<div>
-  <svg width="${w}" height="${w}" viewbox="0 0 ${w} ${w}" text-anchor="middle" style="font: ${fontSize}px sans-serif; display: block">`;
-   
-  for (let i = 0; i < counts.length; i++) {
-  html += donutSegment(
-  offsets[i] / total,
-  (offsets[i] + counts[i]) / total,
-  r,
-  r0,
-  colors[i]
-  );
-  }
-  html += `<circle cx="${r}" cy="${r}" r="${r0}" fill="white" />
-  <text dominant-baseline="central" transform="translate(${r}, ${r})">
-  ${total.toLocaleString()}
-  </text>
-  </svg>
-  </div>`;
-   
-  const el = document.createElement('div');
-  el.innerHTML = html;
-  return el.firstChild;
-  }
-   
-  function donutSegment(start, end, r, r0, color) {
-  if (end - start === 1) end -= 0.00001;
-  const a0 = 2 * Math.PI * (start - 0.25);
-  const a1 = 2 * Math.PI * (end - 0.25);
-  const x0 = Math.cos(a0),
-  y0 = Math.sin(a0);
-  const x1 = Math.cos(a1),
-  y1 = Math.sin(a1);
-  const largeArc = end - start > 0.5 ? 1 : 0;
-   
-  // draw an SVG path
-  return `<path d="M ${r + r0 * x0} ${r + r0 * y0} L ${r + r * x0} ${
-  r + r * y0
-  } A ${r} ${r} 0 ${largeArc} 1 ${r + r * x1} ${r + r * y1} L ${
-  r + r0 * x1
-  } ${r + r0 * y1} A ${r0} ${r0} 0 ${largeArc} 0 ${r + r0 * x0} ${
-  r + r0 * y0
-  }" fill="${color}" />`;
-  }
-
-*/
-
 
 // Modal - popup for filtering results
 const filterResults = document.getElementById('filterResults');
