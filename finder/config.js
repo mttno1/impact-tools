@@ -15,6 +15,20 @@ const config = {
   filters: [
     {
       type: 'checkbox',
+      title: 'Standort ',
+      columnHeader: 'City', // Case sensitive - must match spreadsheet entry
+      listItems: [
+          'Bamberg',
+          'Erlangen',
+          'Fürth',
+          'Nürnberg',
+          'Schnaittach',
+          'Veitsbronn'
+      ]
+    },
+
+    {  
+      type: 'checkbox',
       title: 'Kategorie',
       columnHeader: 'Category',
       listItems: [
@@ -30,19 +44,6 @@ const config = {
         'Universitäre und außeruniversitäre Forschung'
     ]
     ,
-    },
-    {
-      type: 'dropdown',
-      title: 'Standort ',
-      columnHeader: 'City', // Case sensitive - must match spreadsheet entry
-      listItems: [
-          'Bamberg',
-          'Erlangen',
-          'Fürth',
-          'Nürnberg',
-          'Schnaittach',
-          'Veitsbronn'
-      ]
     },
     {
       type: 'dropdown',
