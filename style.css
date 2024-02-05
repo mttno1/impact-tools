@@ -1,0 +1,204 @@
+#sidebarA{
+    color: white;
+    
+}
+
+#filterResults{
+    font-size: 12px;
+    color: white;
+    background-color: #448EE4;
+
+}
+
+.theme{
+    background-color: #2A395F;
+}
+
+.select{
+    font-style: italic;
+    opacity: .7;
+}
+
+.mapboxgl-ctrl-geocoder--input {
+    padding: 6px 30px;
+    margin-left: 5px;
+}
+
+.listings .item {
+    font-size: 14px;
+    word-wrap: break-word;
+    text-decoration: none;
+    border-bottom: solid rgb(34, 33, 33, .3) 1px;
+}
+
+.listings .item:last-child {
+    border-bottom: none;
+}
+
+.listings .item .title {
+    display: inline-block;
+    width: 100%;
+    color: #2A395F;
+    font-weight: 800;
+    margin-top: 5px;
+    text-decoration: none;
+}
+
+
+::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+    border-left: 0;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-track {
+    background: none;
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 0;
+    background: #2A395F;
+}
+
+
+.clearfix {
+    display: block;
+}
+
+.clearfix::after {
+    content: '.';
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+}
+
+.mapboxgl-popup-content {
+    font: 400 14px/22px 'Source Sans Pro', 'Helvetica Neue', Sans-serif;
+    padding: 0;
+    width: 400px;
+  }
+
+.mapboxgl-popup-close-button {
+    display: none;
+  }
+
+.mapboxgl-popup-content h3 {
+    background: #A9D6EA;
+    color: #1c3e57;
+    margin: 0;
+    display: block;
+    padding: 10px;
+    border-radius: 3px 3px 0 0;
+    font-weight: 700;
+    margin-top: -15px;
+
+  }
+
+.mapboxgl-popup-content h4 {
+    margin: 0;
+    display: block;
+    padding: 10px 10px 10px 10px;
+    font-weight: 400;
+}
+
+.mapboxgl-popup-content div {
+    padding: 10px;
+}
+
+.mapboxgl-popup-content p {
+    padding: 2px 2px 10px 10px;
+    margin: 0;
+}
+
+.mapboxgl-popup-anchor-top>.mapboxgl-popup-content {
+    margin-top: 15px;
+  }
+  
+.mapboxgl-popup-anchor-top>.mapboxgl-popup-tip {
+    border-bottom-color: #A9D6EA;
+
+}
+
+.sfgov-url-button__container a {
+    background: #448EE4;
+    border-radius: 8px;
+    color: #fff;
+    font: 15px 'Source Sans Pro', 'Helvetica Neue', Sans-serif;
+    font-weight: 500;
+    padding: 13px 20px 11px;
+    text-align: center;
+    text-decoration: none;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0.5em 0.5em 0.5em 0;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    display: inline-block;
+    width: auto;
+    line-height: 17px;
+  }
+  
+  .sfgov-url-button__container a:hover {
+    background: #0c1464;
+  }
+  
+  .sfgov-url-button__container div.field {
+    padding: 0;
+  }
+
+
+
+  /* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {
+    .map {
+      top: 60%;
+      left: 0;
+      width: 100%;
+      bottom: 0;
+      right: 0;
+    }
+  
+    .sidebar {
+      height: 60%;
+      width: 100%;
+    }
+  
+    .mapboxgl-ctrl-geocoder {
+      width: 75px;
+    }
+  
+    .mapboxgl-popup {
+      display: none;
+    }
+  
+    #listings-container {
+      overflow: auto;
+      height: calc(100% - 96px)
+    }
+  
+    .listings {
+      height: auto;
+    }
+  
+  }
+  
+  /* Small devices (portrait tablets and large phones, 600px and up) */
+  @media only screen and (min-width: 600px) {}
+  
+  /* Medium devices (landscape tablets, 768px and up) */
+  @media only screen and (min-width: 768px) {}
+  
+  /* Large devices (laptops/desktops, 992px and up) */
+  @media only screen and (min-width: 992px) {}
+  
+  /* Extra large devices (large laptops and desktops, 1200px and up) */
+  @media only screen and (min-width: 1200px) {}
+
+
+
+
+
+  
