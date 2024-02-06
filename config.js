@@ -4,7 +4,7 @@ const config = {
   style: 'mapbox://styles/mapbox/light-v11',
   accessToken:
     'pk.eyJ1IjoibXR0bm8xIiwiYSI6ImNscGNyeGl0cjB1OTEyam5rOG1tdmF3enAifQ.TRQ0vxWHwNV3emQborqVBA',
-  CSV: 'innovationSpaces.csv',
+  CSV: 'https://raw.githubusercontent.com/mttno1/impact-tools/master/innovationSpaces.csv',
   center: [11.0821, 49.446],
   zoom: 12.5,
   title: 'Innovationsräume',

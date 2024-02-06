@@ -624,6 +624,7 @@ map.on('load', () => {
                     ], // color of circles
                     'circle-stroke-color': 'white',
                     'circle-stroke-width': 1,
+                    
                     }
                 });
                 map.addLayer({
@@ -645,7 +646,6 @@ map.on('load', () => {
                         'text-halo-width': 2
                         },
                 });
-
 
             },
         );
