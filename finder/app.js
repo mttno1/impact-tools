@@ -626,6 +626,25 @@ map.on('load', () => {
                     'circle-stroke-width': 1,
                     }
                 });
+                map.addLayer({
+                    'id': 'poi-labels',
+                    'type': 'symbol',
+                    'source': 'locationData',
+                    'layout': {
+                    'text-field': ['get', 'Location_Name'],
+                    'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+                    'text-radial-offset': 0.5,
+                    'text-justify': 'auto',
+                    'text-size': 11,
+                    'text-letter-spacing': 0.05,
+                    'text-offset': [0, 1.5]
+                    },
+                    'paint': {
+                        'text-color': '#202',
+                        'text-halo-color': '#fff',
+                        'text-halo-width': 2
+                        },
+                });
 
 
             },
